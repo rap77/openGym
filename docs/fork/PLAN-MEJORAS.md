@@ -7,7 +7,7 @@ Fecha: 8-nov-2026 · Repo: `~/proy/openGym` (WSL) · Base: v1.4.4 del upstream D
 
 ## Decisión previa (bloquea todo lo demás)
 
-**D-0: ¿qué relación vas a mantener con el upstream?**
+**D-0: ¿qué relación vas a mantener con el upstream?** → ✅ **Decidido 8-nov-2026: A, seguir al upstream.**
 
 | Opción | Implica |
 |---|---|
@@ -28,24 +28,34 @@ Disparador: decidir antes de empezar F3. Mientras D-0 siga abierta, solo se ejec
 - `cp .env.example .env && docker compose up -d --build`. Registrar con passkey y guardar un entreno.
 - Aceptación: el flujo funciona en local y `/api/health` responde OK.
 
-## Fase 1: Adaptar el fork (1 día, prioridad alta, sin riesgo)
+## Fase 1: Adaptar el fork ✅ 9-nov-2026 (revisada para D-0 = seguir upstream)
 
-**H1.1 Desactivar los workflows del autor original**
-- Desactivar `mirror.yml` (empuja a la GitLab del autor) y `cla.yml`/`cla-issue.yml` (piden el CLA del autor). Revisar `docker-publish.yml`, `ios.yml` y `pages.yml`: secretos, registro y dominio.
-- Aceptación: un push a tu `main` no dispara ningún job que apunte a recursos del original.
+**Principio:** F1 **no edita archivos del autor** (workflows, compose, README, helm). Cada edición sería un conflicto en cada sync. Se resuelve con configuración de GitHub, archivos locales sin versionar y archivos nuevos.
 
-**H1.2 Cambiar identidad e imágenes**
-- `docker-compose.yml`, `helm/values.yaml`, `kubernetes/deployment.yaml` y `contrib/nix`: `ghcr.io/duartesantos8/...` pasa a tu registro, o a `build:` local.
-- README: badges, enlaces (Discord, donaciones, tiendas) y una nota de que es un fork.
-- Aceptación: `grep -ri duartesantos8` solo aparece en LICENSE, NOTICE y CHANGELOG (atribución).
+**H1.1 Workflows: desactivar desde GitHub, sin editar YAML**
+| Workflow | En el fork | Acción |
+|---|---|---|
+| `mirror.yml` | Guarda `github.repository == 'DuarteSantos8/openGym'` → el job se salta solo | Desactivar igual (que no aparezca en Actions) |
+| `cla.yml`, `cla-issue.yml` | Pediría el CLA del autor en tus PR | Desactivar |
+| `pages.yml` | Intentaría publicar la demo en rap77.github.io | Desactivar |
+| `ios.yml` | Builds macOS sin firma, fallan y gastan minutos | Desactivar |
+| `docker-publish.yml` | Solo en `release`; publicaría en `ghcr.io/rap77` | Desactivar. **Disparador para reactivarlo:** cuando quieras imágenes propias publicadas |
+| `test.yml`, `audit.yml`, `release-check.yml` | Útiles | Mantener |
+- Aceptación: en Actions de rap77/openGym solo quedan habilitados Tests, Audit y Release check.
 
-**H1.3 Cumplir la licencia**
-- AGPL-3.0: si lo expones en red, publica tu fuente (enlace visible en la app o en el sitio web). Mantén `NOTICE.md` y respeta la licencia propia de los medios del catálogo.
-- Aceptación: queda una sección "Licencia del fork" en el README.
+**H1.2 Imágenes: override local, sin tocar `docker-compose.yml`** ✅
+- `docker-compose.override.yml` (excluido en `.git/info/exclude`) → `opengym-fork-*:local` con `pull_policy: build`.
+- README, helm, kubernetes y nix **no se tocan**. Disparador: desplegar el fork fuera de tu PC.
+- Aceptación: `docker compose config | grep image:` muestra solo `opengym-fork-*` ✅ (9-nov).
 
-**H1.4 Remotos git**
-- `git remote add upstream https://github.com/DuarteSantos8/openGym` y `origin` apuntando a tu repo.
-- Aceptación: `git fetch upstream` funciona. Si D-0 = A, queda documentado el procedimiento de sync en `docs/fork/SYNC.md`.
+**H1.3 Identidad y licencia** ✅: `FORK.md` (archivo nuevo) con la relación con upstream, AGPL §13 y su disparador, y el CLA.
+
+**H1.4 Remotos** ✅: `origin` = rap77, `upstream` = DuarteSantos8.
+
+**H1.5 `.npm-cache/` sin versionar:** carpetas creadas por `npm ci` en raíz, api, frontend y mcp → añadir `.npm-cache/` a `.git/info/exclude` (no al `.gitignore` del upstream).
+
+**Procedimiento de sync con upstream** (antes de cada bloque de trabajo y con cada release del original):
+`git fetch upstream && git merge --ff-only upstream/main || git rebase upstream/main` → `npm ci` en los paquetes cambiados → tests en solitario de lo que toque el fork.
 
 ## Fase 2: Calidad sin tocar lógica (2–3 días)
 
@@ -67,7 +77,9 @@ Disparador: decidir antes de empezar F3. Mientras D-0 siga abierta, solo se ejec
 - Convertir el `package.json` raíz (hoy solo tiene `js-yaml`) en workspaces `api`, `frontend` y `mcp`, con scripts `test`, `lint` y `typecheck` globales.
 - Aceptación: `npm test` en la raíz corre las tres suites.
 
-## Fase 3: Refactorización estructural (solo si D-0 = B, o coordinada con upstream)
+## Fase 3: Refactorización estructural (solo coordinada con upstream; con D-0 = A no se hace en el fork)
+
+**Disparador para reconsiderarla:** 2 syncs seguidos con conflictos en `sheets.jsx` o `server.js` de más de 1 h cada uno, **o** que el upstream anuncie su propia división. En ese caso se propone upstream.
 
 Requisito: F0 y H2.3 terminados (red de tests E2E disponible).
 

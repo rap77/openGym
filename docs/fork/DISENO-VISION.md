@@ -163,8 +163,14 @@ El lado (izquierdo o derecho) se elige automáticamente: el de mayor confianza m
 | Kinect: adaptador y SDK solo para Windows | El bridge es opcional; la v1 no depende de él |
 | Falsa seguridad ("la app dijo que estaba bien") | Texto en la interfaz: guía de técnica, no evaluación clínica |
 
-## 12. Preguntas abiertas
+## 12. Decisiones (8-nov-2026)
 
-1. ¿Tu Kinect es **v2 (Xbox One)** o **v1 (Xbox 360)**? ¿Tienes el adaptador USB para PC?
-2. ¿Dónde vas a entrenar: delante del PC con webcam, con el móvil en un trípode o delante de la TV? Esto define la fuente por defecto.
-3. ¿Decisión D-0 del plan (seguir al upstream o divergir)? Afecta a cuánto se toca de `sheets.jsx`.
+1. **Fuente por defecto: móvil en trípode (fuente A, MediaPipe)** dentro de la app Capacitor, con el modelo *lite*. Colocación: de lado, a 2-3 m, a la altura de la cadera; en vertical para ejercicios de pie y en horizontal para plancha y puente.
+2. **Kinect: el usuario tiene un v1 (Xbox 360). No se integra por ahora.** Motivos: SDK 1.8 solo para Windows y sin mantenimiento, 20 articulaciones con tracking pobre en el suelo, y necesita el adaptador "Kinect for Windows". El *bridge* del §3.1 queda **diseñado pero no planificado**.
+   - **Disparador para reabrirlo:** alguna condición del §3.1 **y** que no se resuelva cambiando la posición del móvil o la luz. Aun así, primero se evalúa un Kinect v2 o una cámara de profundidad actual.
+3. **D-0 = A, seguir al upstream.**
+   - Código nuevo en archivos nuevos (`lib/pose/`, `views/PoseCoach.jsx`, `rules/`).
+   - Contacto con archivos existentes: (a) botón en la serie activa, (b) campo `form` en `workout-model.js`, (c) `"pose"` en el catálogo, (d) permiso de cámara Android/iOS. Cada uno en un commit pequeño y aislado.
+   - **No se parte `sheets.jsx` ni `server.js` en el fork.**
+   - Se abre un *issue* o discusión upstream proponiendo la funcionalidad; si se acepta, PR por hitos.
+4. **Upstream ya tiene trabajo relacionado:** existe la rama `upstream/gm-circuits-146` (circuitos). **Disparador:** antes de empezar V1.0, revisar esa rama y el issue tracker por si el autor ya planea algo de cámara o de holds automáticos (rama `upstream/auto-holds`), para no duplicar.
