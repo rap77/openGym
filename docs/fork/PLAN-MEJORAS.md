@@ -42,6 +42,7 @@ Disparador: decidir antes de empezar F3. Mientras D-0 siga abierta, solo se ejec
 | `docker-publish.yml` | Solo en `release`; publicaría en `ghcr.io/rap77` | Desactivar. **Disparador para reactivarlo:** cuando quieras imágenes propias publicadas |
 | `test.yml`, `audit.yml`, `release-check.yml` | Útiles | Mantener |
 - Aceptación: en Actions de rap77/openGym solo quedan habilitados Tests, Audit y Release check.
+- ✅ 11-nov-2026: desactivados CLA, CLA (issue), Pages, iOS y Publish Docker images. Mirror se deja habilitado: se salta solo por su guarda (corridas #1 y #2 en gris). Tests #1 y #2 en verde (~30 s: la ejecución es corta porque los commits solo tocan docs).
 
 **H1.2 Imágenes: override local, sin tocar `docker-compose.yml`** ✅
 - `docker-compose.override.yml` (excluido en `.git/info/exclude`) → `opengym-fork-*:local` con `pull_policy: build`.
@@ -52,7 +53,7 @@ Disparador: decidir antes de empezar F3. Mientras D-0 siga abierta, solo se ejec
 
 **H1.4 Remotos** ✅: `origin` = rap77, `upstream` = DuarteSantos8.
 
-**H1.5 `.npm-cache/` sin versionar:** carpetas creadas por `npm ci` en raíz, api, frontend y mcp → añadir `.npm-cache/` a `.git/info/exclude` (no al `.gitignore` del upstream).
+**H1.5 `.npm-cache/` sin versionar:** ✅ 11-nov-2026, añadido a `.git/info/exclude`. Stack reconstruido con `opengym-fork-*:local`: `/api/health` 200, `users: 1`.
 
 **Procedimiento de sync con upstream** (antes de cada bloque de trabajo y con cada release del original):
 `git fetch upstream && git merge --ff-only upstream/main || git rebase upstream/main` → `npm ci` en los paquetes cambiados → tests en solitario de lo que toque el fork.
@@ -122,6 +123,13 @@ Requisito: F0 y H2.3 terminados (red de tests E2E disponible).
 |---|---|---|---|
 | F0 Línea base | ½ d | nulo | — |
 | F1 Adaptar fork | 1 d | nulo | F0 |
+| F2 Calidad | 2–3 d | bajo | F0 |
+| F3 Refactorización | 5–8 d | medio | D-0, H2.3 |
+| F4 SQLite | 3–5 d | medio-alto | disparador, F3.3 |
+| F5 Diferenciación | — | — | F1 |
+
+Orden recomendado: **F0 → F1 → H2.1 → H2.3 → D-0 → el resto**.
+ | nulo | F0 |
 | F2 Calidad | 2–3 d | bajo | F0 |
 | F3 Refactorización | 5–8 d | medio | D-0, H2.3 |
 | F4 SQLite | 3–5 d | medio-alto | disparador, F3.3 |
