@@ -58,25 +58,40 @@ Disparador: decidir antes de empezar F3. Mientras D-0 siga abierta, solo se ejec
 **Procedimiento de sync con upstream** (antes de cada bloque de trabajo y con cada release del original):
 `git fetch upstream && git merge --ff-only upstream/main || git rebase upstream/main` → `npm ci` en los paquetes cambiados → tests en solitario de lo que toque el fork.
 
-## Fase 2: Calidad sin tocar lógica (2–3 días)
+## Fase 2: Calidad sin tocar lógica (revisada 11-nov-2026 para D-0 = seguir upstream)
 
-**H2.1 Linter y formateador**
-- Biome (un binario, rápido) o ESLint+Prettier. La config va en la raíz, para `api/`, `frontend/` y `mcp/`.
-- Primero se aplica solo a los archivos tocados (lint-staged). El formateo de todo el repo va en **un commit `chore` separado**.
-- Disparador del formateo global: cuando H2.1 lleve una semana estable en CI (si D-0 = A, nunca en el fork: proponerlo upstream).
-- Aceptación: job `lint` en `test.yml` en verde, bloqueante para los archivos modificados.
+**Hallazgo (11-nov):** `test.yml` decide qué corre con `dorny/paths-filter` (job `changes`). Un commit que solo toca docs se salta todas las suites, por eso salió verde en ~30 s. El upstream ya tiene CI por áreas, `test-audit.mjs` y `bundle-size` en CI.
 
-**H2.2 Chequeo de tipos ligero**
-- `// @ts-check` + JSDoc y `tsc --noEmit` con `allowJs` y `checkJs`, empezando por `api/*.js` (módulos pequeños) y `frontend/src/lib/`.
-- Aceptación: job `typecheck` en verde para los directorios incluidos. Disparador de ampliación: cada módulo que se toque en F3 entra en el alcance del typecheck en ese mismo PR.
+**Principio:** como en F1, no se edita `test.yml`, ni los `package.json` del autor, ni se reformatea su código. La calidad propia del fork vive en **archivos nuevos** y en un **workflow nuevo** (`.github/workflows/fork-quality.yml`), que el upstream nunca toca.
 
-**H2.3 Tests E2E de interfaz**
-- Playwright con autenticador WebAuthn virtual: registro, crear rutina, registrar entreno, ver historial y sincronizar entre dos contextos.
-- Aceptación: 3–5 escenarios que corren contra `docker compose` en CI, en menos de 5 minutos.
+**H2.3 Tests E2E con Playwright (se hace PRIMERO, antes de V1.0)**
+- Carpeta nueva `e2e/` en la raíz, con `package.json` propio (como `mcp/`). Playwright contra el stack de `docker compose`, con autenticador WebAuthn virtual (CDP `WebAuthn.addVirtualAuthenticator`): sin passkey real.
+- Escenarios (automatizan la prueba manual de F0):
+  1. Create profile → entra en Inicio.
+  2. Crear rutina con 1 ejercicio → empezar → marcar 1 serie → terminar.
+  3. El entreno aparece en Progreso y se detecta el PR.
+  4. Cerrar sesión → Sign in con la misma passkey virtual → los datos siguen.
+- CI: job `e2e` en `fork-quality.yml` (build del stack + Playwright + traza como artefacto si falla).
+- Aceptación: los 4 escenarios en verde en < 5 min, en CI y en local (`cd e2e && npx playwright test`).
+- Por qué primero: es la red de seguridad para tocar `workout-model.js` y la serie activa en V1.0.
+- **Disparador para proponerlo upstream:** 2 semanas estable en el fork.
 
-**H2.4 Workspace npm**
-- Convertir el `package.json` raíz (hoy solo tiene `js-yaml`) en workspaces `api`, `frontend` y `mcp`, con scripts `test`, `lint` y `typecheck` globales.
-- Aceptación: `npm test` en la raíz corre las tres suites.
+**H2.1 Linter y formateador: solo sobre código del fork**
+- Biome, con `biome.json` (archivo nuevo) y alcance **solo** en código propio: `e2e/**`, `frontend/src/lib/pose/**`, `frontend/src/views/PoseCoach.jsx`.
+- No se formatea código del upstream. Disparador para ampliar: que el upstream adopte un linter, y entonces se usa el suyo.
+- Aceptación: `npx @biomejs/biome ci` en verde en `fork-quality.yml`. Se hace junto con H2.3 (primer código propio).
+
+**H2.2 Tipos: `// @ts-check` + JSDoc solo en código del fork**
+- `tsconfig.fork.json` (archivo nuevo, `allowJs`, `checkJs`, `noEmit`), con `include` = `frontend/src/lib/pose/**`. Job `typecheck` en `fork-quality.yml`.
+- Se hace con el primer commit de V1.0.
+
+**H2.4 Workspace npm: descartado**
+- Cambiaría el `package.json` y los lockfiles del autor, con conflicto seguro en cada sync. Se sustituye por `scripts/fork/check.sh` (archivo nuevo): las tres suites con `--maxWorkers=2` + biome + e2e.
+- Disparador para reconsiderarlo: que el upstream adopte workspaces.
+
+**H2.5 Deudas de BASELINE antes de H2.3**
+- D-B1: `media-sync.test.js` con `--testTimeout=20000`. Si pasa, se cierra como lento por entorno.
+- D-B2: los 5 archivos sin re-ejecutar, en solitario.
 
 ## Fase 3: Refactorización estructural (solo coordinada con upstream; con D-0 = A no se hace en el fork)
 
@@ -128,11 +143,4 @@ Requisito: F0 y H2.3 terminados (red de tests E2E disponible).
 | F4 SQLite | 3–5 d | medio-alto | disparador, F3.3 |
 | F5 Diferenciación | — | — | F1 |
 
-Orden recomendado: **F0 → F1 → H2.1 → H2.3 → D-0 → el resto**.
- | nulo | F0 |
-| F2 Calidad | 2–3 d | bajo | F0 |
-| F3 Refactorización | 5–8 d | medio | D-0, H2.3 |
-| F4 SQLite | 3–5 d | medio-alto | disparador, F3.3 |
-| F5 Diferenciación | — | — | F1 |
-
-Orden recomendado: **F0 → F1 → H2.1 → H2.3 → D-0 → el resto**.
+Orden recomendado (actualizado 11-nov-2026): **F0 ✅ → F1 ✅ → H2.5 → H2.3 (e2e) + H2.1 → V1.0 visión (con H2.2) → el resto**.
