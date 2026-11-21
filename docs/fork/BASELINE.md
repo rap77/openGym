@@ -55,6 +55,26 @@ Re-ejecución en solitario, sin paralelismo:
   - Ese día: re-ejecutar en solitario `AdminCoach.test.jsx` y `coach-api.i18n.test.js` con Node 24. Si siguen fallando, abrir un issue upstream con el log.
 
 ## Pendientes para cerrar F0
+### Resultado de D-B1 y D-B2 (21-nov-2026, Node 22, en solitario)
+- **D-B1 `media-sync.test.js`:** 29/31. Los mismos 2 tests de `localMediaGc` hacen timeout **incluso con 20 s**. El archivo tardó **768 s**. Estos tests crean blobs de **200-400 MB** en memoria (`new Uint8Array(400 * MB)`, l. 394).
+- **D-B2:** 122/132. `AdminCoach`, `FocusView` y `card-dismiss` pasan. Fallan por **timeout de 5 s** (no por aserción) 9 casos de `coach-api.i18n.test.js` (cargan packs de idioma de 600 kB a 1,6 MB) y 1 de `Library.test.jsx` (pl).
+- **Lectura:** los 12 fallos son **timeouts**, ninguno de aserción, y todos en tests que mueven mucha memoria o archivos grandes. La causa probable son los **recursos de WSL** (RAM o CPU asignadas), no el código.
+- **Deuda D-B4 (sustituye a D-B1 y D-B2): recursos de WSL.**
+  - **Medición 21-nov-2026** (`11-vmstat.log`, cada 5 s durante `media-sync.test.js`): WSL tiene 7,6 GiB de RAM y 8 CPU (Windows: 15,8 GB). Durante el test, la **memoria libre cae a ~77 MB**, entra swap-out (`so` hasta 309), la cola de ejecución llega a 41 y la CPU de sistema (`sy`) a 56 % (paginación/asignación). `wa` ≤ 4 %: no es disco. **Cuello de botella = memoria**: el test de 400 MB acaba ocupando varias copias en RAM.
+  - Resultado: 30/31 (falla solo `a guest never loses a referenced file to the cap`, l. 392). Duró **87 s**, frente a 768 s la vez anterior (que probablemente competía con otra carga).
+  - `.wslconfig` actual: solo `networkingMode=mirrored`, sin límite de memoria → WSL usa el 50 % por defecto.
+  - Acción: `memory=10GB`, `swap=4GB` en `.wslconfig`, conservando `networkingMode=mirrored`. Deja ~5,8 GB a Windows. Después: `wsl --shutdown` y repetir los 3 archivos.
+  - ✅ **CERRADA 21-nov-2026: causa = memoria de WSL, no el código.** Con `.wslconfig` en 10 GB (9,7 GiB visibles):
+    - `media-sync`, `coach-api.i18n` y `Library`: **86/86 pasan en 22 s** (antes 768 s con fallos). `media-sync` sola: 2,1 s.
+    - `12-vmstat.log`: memoria libre mínima **6,2 GB** (antes 77 MB), **swap-out 0** (antes 309), `sy` máx 6 % (antes 56 %), cola máx 5 (antes 41).
+    - Configuración aplicada: `C:\\Users\\rpadron\\.wslconfig` (`networkingMode=mirrored`, `memory=10GB`, `swap=4GB`); copia previa en `.wslconfig.bak`.
+    - **Requisito del entorno de desarrollo del fork:** WSL con ≥ 10 GB. Si se reinstala WSL o se cambia de PC, esta es la primera comprobación (`free -h`).
+    - Pendiente menor: repetir la suite completa del frontend con 10 GB para tener la cifra limpia. **Disparador:** la primera vez que se corra la suite completa en H2.3.
+  - Acción: medir con `free -h && nproc` dentro de WSL. Si la RAM es < 8 GB, subirla en `C:\\Users\\rpadron\\.wslconfig` (`[wsl2]` `memory=12GB` `processors=6`), `wsl --shutdown` y repetir los 3 archivos.
+  - Si pasan → D-B4 cerrada como entorno.
+  - Si siguen fallando con más recursos → issue upstream con los logs `09-db1.log` y `10-db2.log`.
+  - **Disparador:** antes de H2.3 (la e2e con Playwright levanta un navegador y el stack, y competirá por la misma RAM).
+
 **F0 cerrada el 9-nov-2026.** Lo que queda abierto son deudas con disparador propio:
 - D-B1 y D-B2: antes del primer PR o antes de tocar `media-sync`.
 - D-B3 (Node 24): cuando upstream migre, o el 30-abr-2027.
