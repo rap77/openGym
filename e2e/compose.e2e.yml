@@ -1,0 +1,29 @@
+# Stack aislado para los tests e2e del fork (H2.3). Archivo nuevo, no es del upstream.
+# Se usa SIEMPRE con:  docker compose -p opengym-e2e -f docker-compose.yml -f e2e/compose.e2e.yml ...
+# Al pasar -f, Compose NO carga docker-compose.override.yml (tu override local), así que aquí
+# se repiten los nombres de imagen propios.
+# Diferencias con tu stack normal:
+#   - puerto 8090 (tu app sigue en 8080)
+#   - datos en un volumen Docker propio (e2e-data), que `down -v` borra: tu ./data nunca se toca
+#   - ORIGIN apunta a 8090 (las passkeys exigen que coincida con la URL del navegador)
+services:
+  api:
+    image: opengym-fork-api:e2e
+    pull_policy: build
+    environment:
+      - ORIGIN=http://localhost:8090
+      - RP_ID=localhost
+    volumes: !override
+      - e2e-data:/data
+      - e2e-coach-auth:/coach-auth
+  web:
+    image: opengym-fork-web:e2e
+    pull_policy: build
+    ports: !override
+      - "8090:80"
+    environment:
+      - NGINX_PORT=80
+
+volumes:
+  e2e-data:
+  e2e-coach-auth:

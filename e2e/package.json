@@ -1,0 +1,14 @@
+{
+  "name": "opengym-fork-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Tests e2e del fork rap77/openGym (H2.3). No forman parte del upstream.",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1"
+  }
+}
