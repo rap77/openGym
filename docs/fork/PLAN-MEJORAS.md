@@ -74,6 +74,7 @@ Disparador: decidir antes de empezar F3. Mientras D-0 siga abierta, solo se ejec
 - CI: job `e2e` en `fork-quality.yml` (build del stack + Playwright + traza como artefacto si falla).
 - Aceptación: los 4 escenarios en verde en < 5 min, en CI y en local (`cd e2e && npx playwright test`).
 - **Progreso 22-nov-2026:** base de `e2e/` creada (`compose.e2e.yml` aislado en :8090 con volumen propio, `run.sh`, passkey virtual por CDP, Playwright 1.65.1 + Chromium 159). **Escenario 1 ✅** (crear perfil con passkey): 24,4 s en frío, 2,9 s en caliente (2 ejecuciones verdes). Pendientes: escenarios 2-4 y job `e2e` en `fork-quality.yml`.
+- **Progreso 22-nov-2026 (tarde):** **escenarios 2 y 4 ✅** en `02-workout-and-relogin.spec.js` (entreno libre con 1 serie → hoja "Workout complete!" con 1 set → Stats "All 1" → sign out → sign in con la misma passkey → el entreno sigue). Suite: 2 passed en 1,2 min (`18-e2e.log`). Lecciones de los 4 intentos: el "+" del selector no cierra la hoja (Escape); `page.goto` recarga la SPA y la manda a Inicio (navegar con la barra); tras guardar se abre "Workout complete!" y hay que cerrarla ("Nice!"); "Sign out" está en la subpágina "Account, devices and sync". Pendientes: **escenario 3** (PR detectado: requiere escribir un peso en la serie) y job `e2e` en `fork-quality.yml`.
 - Por qué primero: es la red de seguridad para tocar `workout-model.js` y la serie activa en V1.0.
 - **Disparador para proponerlo upstream:** 2 semanas estable en el fork.
 
