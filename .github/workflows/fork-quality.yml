@@ -1,0 +1,75 @@
+# Calidad propia del fork rap77/openGym (H2.3, docs/fork/PLAN-MEJORAS.md). Archivo nuevo:
+# el upstream no lo tiene, así que nunca da conflictos al sincronizar.
+# Corre los tests e2e (Playwright) contra el stack aislado de e2e/compose.e2e.yml.
+name: Fork quality
+
+on:
+  push:
+    branches: [main]
+    # Solo cuando cambia código o algo que entra en las imágenes. Un commit que solo toca
+    # docs/ no lo dispara (decisión del 22-nov-2026).
+    paths:
+      - 'frontend/**'
+      - 'api/**'
+      - 'web/**'
+      - 'catalogue/**'
+      - 'e2e/**'
+      - 'docker-compose.yml'
+      - '.nvmrc'
+      - '.github/workflows/fork-quality.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'api/**'
+      - 'web/**'
+      - 'catalogue/**'
+      - 'e2e/**'
+      - 'docker-compose.yml'
+      - '.nvmrc'
+      - '.github/workflows/fork-quality.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fork-quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    # Solo en el fork. Si algún día se propone upstream, allí no correría sin cambiar esto.
+    if: github.repository == 'rap77/openGym'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # docker-compose.yml declara env_file: .env, que no está en git.
+      - name: Crear .env desde el ejemplo
+        run: cp .env.example .env
+
+      - name: Instalar Playwright
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Levantar stack aislado y correr e2e
+        run: |
+          chmod +x e2e/run.sh
+          e2e/run.sh --down
+
+      - name: Guardar trazas y capturas si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            e2e/test-results/
+            e2e/playwright-report/
+          retention-days: 7
