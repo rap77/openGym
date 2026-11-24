@@ -5,11 +5,22 @@ Todo el mérito del proyecto es de su autor. El README, el sitio web, las tienda
 
 ## Qué añade este fork
 - Supervisión de ejercicios por visión por computadora (en diseño): [docs/fork/DISENO-VISION.md](docs/fork/DISENO-VISION.md)
+- **Biblioteca propia de rutinas** (en curso): el upstream 1.4.5 abrió su biblioteca de rutinas como un índice
+  JSON configurable por instancia (`config.coach.routinesUrl`, en Ajustes → AI Coach → Advanced → Routines
+  library). El fork puede publicar ahí sus propias rutinas sin tocar un solo fichero del upstream.
+  Ver [docs/fork/PLAN-MEJORAS.md](docs/fork/PLAN-MEJORAS.md) §F5-bis.1.
+- Tests e2e con Playwright contra el stack real (`e2e/`), con un workflow propio (`.github/workflows/fork-quality.yml`).
 - Plan de mejoras: [docs/fork/PLAN-MEJORAS.md](docs/fork/PLAN-MEJORAS.md) · Línea base: [docs/fork/BASELINE.md](docs/fork/BASELINE.md)
 
 ## Relación con el upstream
 - **Se sigue al upstream** (decisión D-0, 8-nov-2026): sync periódico desde `upstream/main`.
-- Regla del fork: **no se editan archivos del upstream** si se puede evitar. Lo propio va en archivos nuevos (`FORK.md`, `docs/fork/`, código nuevo), y las funcionalidades útiles se proponen upstream como PR.
+- **Estado:** sigue a **upstream v1.4.5** (sync del 24-nov-2026, 1068 commits, 0 conflictos). El remoto
+  `upstream` es `https://github.com/DuarteSantos8/openGym.git`; el procedimiento es
+  `git fetch upstream && git rebase upstream/main` (los commits del fork son **adiciones de ficheros nuevos**,
+  así que no chocan).
+- Regla del fork: **no se editan archivos del upstream** si se puede evitar. Lo propio va en archivos nuevos (`FORK.md`, `docs/fork/`, `e2e/`, código nuevo), y las funcionalidades útiles se proponen upstream como PR.
+  **Límite conocido:** una regla de progresión nueva o un campo de estado nuevo **sí** obligan a tocar ficheros
+  del upstream (§F5-bis.3 del plan). Cuando pase, la señal es: márchalo upstream.
 - Workflows de GitHub Actions que no aplican al fork: **desactivados desde GitHub**, no borrados ni editados (ver docs/fork/PLAN-MEJORAS.md, H1.1).
 
 ## Licencia
