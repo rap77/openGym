@@ -1,0 +1,331 @@
+{
+  "opengym_plan": 1,
+  "exported": "2026-11-24",
+  "name": "Atlas, movilidad e hipopresivos",
+  "unit": "kg",
+  "week": {
+    "0": ["r3", "r4"],
+    "1": ["r0", "r3"],
+    "2": ["r3", "r4"],
+    "3": ["r1", "r3"],
+    "4": ["r3", "r4"],
+    "5": ["r2", "r3"],
+    "6": ["r3", "r4"]
+  },
+  "routines": [
+    {
+      "id": "r0",
+      "name": "Atlas A · Empuje",
+      "emoji": "arm",
+      "ex": [
+        {
+          "id": "0662",
+          "sets": 10,
+          "reps": 10,
+          "repsMax": 10,
+          "prog": "double",
+          "tempo": "3-1-X-2",
+          "restSec": 30,
+          "note": "Tempo Atlas: 3 s bajando, 1 s de pausa abajo, sube rápido y 2 s apretando arriba. Al clavar 10x10 la app te dirá que toca peso o variación más dura."
+        },
+        {
+          "id": "2921",
+          "sets": 10,
+          "reps": 5,
+          "repsMax": 10,
+          "prog": "double",
+          "tempo": "3-1-X-2",
+          "restSec": 45,
+          "note": "Pike push up. Empieza en 5 reps: la app sube 1 rep cada vez que las 10 series quedan limpias."
+        },
+        {
+          "id": "3443",
+          "sets": 10,
+          "reps": 8,
+          "repsMax": 10,
+          "prog": "double",
+          "tempo": "3-1-X-2",
+          "restSec": 30,
+          "note": "Fondos en silla. Mismo esquema: sube 1 rep por sesión limpia hasta 10."
+        },
+        {
+          "id": "0867",
+          "sets": 4,
+          "mode": "time",
+          "sec": 30,
+          "prog": "time",
+          "restSec": 60,
+          "note": "Estático. La progresión es de tiempo: +5 s por sesión mientras aguantes las 4 series enteras."
+        },
+        {
+          "id": "0715",
+          "sets": 3,
+          "mode": "time",
+          "sec": 30,
+          "side": true,
+          "prog": "time",
+          "restSec": 60,
+          "note": "Estático por lado: 3 series por lado son 6 timers. +5 s por sesión."
+        }
+      ]
+    },
+    {
+      "id": "r1",
+      "name": "Atlas B · Tirón",
+      "emoji": "pullup",
+      "ex": [
+        {
+          "id": "0652",
+          "sets": 10,
+          "reps": 3,
+          "repsMax": 10,
+          "prog": "double",
+          "tempo": "3-1-X-2",
+          "restSec": 60,
+          "note": "Empieza en 3 reps y sube 1 por sesión limpia hasta 10. Si no llegas ni a 3, cambia a 0970 (band assisted pull-up) o 9511 (box assisted)."
+        },
+        {
+          "id": "1326",
+          "sets": 10,
+          "reps": 5,
+          "repsMax": 10,
+          "prog": "double",
+          "tempo": "3-1-X-2",
+          "restSec": 60,
+          "note": "Dominada con agarre supino. El agarre invertido la hace más fácil: llega antes a 10 que la 0652."
+        },
+        {
+          "id": "0499",
+          "sets": 10,
+          "reps": 10,
+          "repsMax": 10,
+          "prog": "double",
+          "tempo": "3-1-X-2",
+          "restSec": 30,
+          "note": "Remo invertido bajo la mesa. El tiron horizontal, y el primero que vas a dominar del tirón."
+        },
+        {
+          "id": "3296",
+          "sets": 4,
+          "mode": "time",
+          "sec": 20,
+          "prog": "time",
+          "restSec": 90,
+          "note": "Front lever. Difícil: aguanta lo que puedas y deja que la app suba 5 s por sesión. Cuando llegues a 45 s, pasa a variación."
+        },
+        {
+          "id": "3303",
+          "sets": 4,
+          "mode": "time",
+          "sec": 15,
+          "side": true,
+          "prog": "time",
+          "restSec": 90,
+          "note": "Human flag (esta en el catalogo como 'flag'). El estático más duro: 15 s ya es una victoria."
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "name": "Atlas C · Pierna y core",
+      "emoji": "legs",
+      "ex": [
+        {
+          "id": "1197",
+          "sets": 10,
+          "reps": 10,
+          "repsMax": 10,
+          "prog": "double",
+          "tempo": "3-1-X-2",
+          "restSec": 45,
+          "note": "Sentadilla. El tempo Atlas aquí es clave: baja 3 s, pausa 1 s, sube rápido, aprieta 2 s arriba."
+        },
+        {
+          "id": "0781",
+          "sets": 10,
+          "reps": 5,
+          "side": true,
+          "repsMax": 10,
+          "prog": "double",
+          "tempo": "3-1-X-2",
+          "restSec": 45,
+          "note": "Split squat por lado: 10 series por cada pierna. Empieza en 5 reps y sube 1 por sesión limpia."
+        },
+        {
+          "id": "7557",
+          "sets": 4,
+          "mode": "time",
+          "sec": 45,
+          "prog": "time",
+          "restSec": 75,
+          "note": "Wall sit. Estático de pierna, 45 s de salida y +5 s por sesión."
+        },
+        {
+          "id": "1402",
+          "sets": 4,
+          "mode": "time",
+          "sec": 20,
+          "prog": "time",
+          "restSec": 75,
+          "note": "L sit. Si no llegas, hazlo con los pies en el suelo y deja que la app suba el tiempo."
+        },
+        {
+          "id": "1246",
+          "sets": 3,
+          "mode": "time",
+          "sec": 30,
+          "prog": "time",
+          "restSec": 60,
+          "note": "Hollow hold. Sirve tambien de hipopresivo: abdomen deprimido, no aflojado."
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "name": "Movilidad diaria",
+      "emoji": "stretch",
+      "ex": [
+        {
+          "id": "4633",
+          "sets": 2,
+          "reps": 5,
+          "side": true,
+          "restSec": 30,
+          "note": "World's greatest stretch, por lado. El que más movimiento thoracic da por segundo."
+        },
+        {
+          "id": "8052",
+          "sets": 2,
+          "reps": 8,
+          "side": true,
+          "restSec": 30,
+          "note": "Rotacion thoracic de rodillas, por lado."
+        },
+        {
+          "id": "0560",
+          "sets": 2,
+          "mode": "time",
+          "sec": 30,
+          "side": true,
+          "restSec": 30,
+          "note": "Flexor de cadera de rodillas, 30 s por lado. Sin pasarse: la sensación debe ser de estiramiento, no de dolor."
+        },
+        {
+          "id": "11903",
+          "sets": 2,
+          "mode": "time",
+          "sec": 30,
+          "restSec": 30,
+          "note": "Flexores de cadera de pie. Complementa al anterior."
+        },
+        {
+          "id": "2936",
+          "sets": 2,
+          "reps": 10,
+          "restSec": 30,
+          "note": "Balanceo de tobillo. El tobillo limita la sentadilla profunda más que la cadera."
+        },
+        {
+          "id": "2761",
+          "sets": 2,
+          "reps": 10,
+          "restSec": 30,
+          "note": "Dorsiflexión de tobillo. Apunta a 10 reps limpias con el talon pegado al suelo."
+        },
+        {
+          "id": "2941",
+          "sets": 2,
+          "reps": 10,
+          "restSec": 30,
+          "note": "Wall slide de antebrazos. Hombro y escápula: el otro gran limitante del push up."
+        },
+        {
+          "id": "3411",
+          "sets": 2,
+          "reps": 8,
+          "side": true,
+          "restSec": 30,
+          "note": "Circunferencia de cadera, por lado."
+        },
+        {
+          "id": "4580",
+          "sets": 2,
+          "reps": 10,
+          "restSec": 30,
+          "note": "Cat cow. Moviliza la columna segmento a segmento."
+        },
+        {
+          "id": "1482",
+          "sets": 2,
+          "reps": 8,
+          "restSec": 30,
+          "note": "Cobra. Cierra la rutina abriendo el pecho."
+        }
+      ]
+    },
+    {
+      "id": "r4",
+      "name": "Hipopresivos",
+      "emoji": "moon",
+      "ex": [
+        {
+          "id": "5445",
+          "sets": 3,
+          "mode": "time",
+          "sec": 20,
+          "prog": "time",
+          "restSec": 60,
+          "note": "Vacio abdominal de pie. Es el núcleo del hipopresivo: abdomen deprimido, respiración contraída, 20 s. +5 s por sesión."
+        },
+        {
+          "id": "9977",
+          "sets": 3,
+          "mode": "time",
+          "sec": 60,
+          "restSec": 45,
+          "note": "Respiracion abdominal en supino: inspira 4 s por la nariz, espira 8 s por la boca. 60 s sin cambiar el ritmo."
+        },
+        {
+          "id": "8146",
+          "sets": 2,
+          "mode": "time",
+          "sec": 60,
+          "restSec": 45,
+          "note": "Relajación del suelo pélvico con respiración profunda. Prepara el dia de hipopresivos."
+        },
+        {
+          "id": "1246",
+          "sets": 3,
+          "mode": "time",
+          "sec": 30,
+          "prog": "time",
+          "restSec": 45,
+          "note": "Hollow hold: el transverso en carga. +5 s por sesión."
+        },
+        {
+          "id": "0276",
+          "sets": 3,
+          "reps": 8,
+          "side": true,
+          "restSec": 45,
+          "note": "Dead bug por lado. Anti-extensión, ritmo lento y sin dejar que la espalda se despegue del suelo."
+        },
+        {
+          "id": "0142",
+          "sets": 3,
+          "reps": 10,
+          "restSec": 45,
+          "note": "Puente de rodillas. Activa el transverso en cadena posterior."
+        },
+        {
+          "id": "0979",
+          "sets": 3,
+          "reps": 10,
+          "side": true,
+          "restSec": 45,
+          "note": "Pallof horizontal con banda. Necesitas una banda. Anti-rotacion: no permitas que el torso gire."
+        }
+      ]
+    }
+  ]
+}
