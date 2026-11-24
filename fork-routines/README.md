@@ -117,3 +117,5 @@ aceptando que llegan sin `prog` ni `tempo`.
 - `atlas-movilidad-hipopresivos.opengym-plan.json` — el plan. Formato `opengym_plan: 1`.
   Validado con el parser del propio openGym (`parsePlan` + `mergePlan`): 5 rutinas, 32 ejercicios,
   0 descartados, 7 días, y la progresión y el tempo sobreviven a la importación.
+  Además está automatizado: `e2e/tests/04-import-plan.spec.js` lo importa en la app real y
+  comprueba que la regla y el tempo llegan a la rutina. Cambiar este fichero corre esa e2e en CI.

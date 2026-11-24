@@ -13,6 +13,11 @@ services:
     environment:
       - ORIGIN=http://localhost:8090
       - RP_ID=localhost
+      # El stack e2e va SIEMPRE en ingles, aunque tu .env ponga DEFAULT_LANG=es. Los tests
+      # localizan los textos por su clave original en ingles (los packs de idioma usan el ingles
+      # como clave), asi que con la app en español los selectores no encuentran nada. El
+      # `environment` de aqui pisa al `env_file: .env` del compose base.
+      - DEFAULT_LANG=en
     volumes: !override
       - e2e-data:/data
       - e2e-coach-auth:/coach-auth
