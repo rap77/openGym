@@ -4,12 +4,20 @@
 Todo el mérito del proyecto es de su autor. El README, el sitio web, las tiendas, los donativos y la comunidad (Discord) son del proyecto original.
 
 ## Qué añade este fork
+- **Tus rutinas de entrenamiento**, escritas en el formato de plan que openGym ya lee:
+  [fork-routines/](fork-routines/README.md). Ahora mismo: Atlas (el método de Charles Atlas:
+  10 series, progresión doble y tempo de 4 cifras), movilidad diaria e hipopresivos.
+  **32 ejercicios, todos con vídeo e instrucciones en español en el catálogo.**
+  La importación está automatizada: `e2e/tests/04-import-plan.spec.js` lo mete en la app real y
+  comprueba que la regla de progresión y el tempo llegan a la rutina.
 - Supervisión de ejercicios por visión por computadora (en diseño): [docs/fork/DISENO-VISION.md](docs/fork/DISENO-VISION.md)
 - **Biblioteca propia de rutinas** (en curso): el upstream 1.4.5 abrió su biblioteca de rutinas como un índice
   JSON configurable por instancia (`config.coach.routinesUrl`, en Ajustes → AI Coach → Advanced → Routines
   library). El fork puede publicar ahí sus propias rutinas sin tocar un solo fichero del upstream.
-  Ver [docs/fork/PLAN-MEJORAS.md](docs/fork/PLAN-MEJORAS.md) §F5-bis.1.
-- Tests e2e con Playwright contra el stack real (`e2e/`), con un workflow propio (`.github/workflows/fork-quality.yml`).
+  **Ojo:** ese formato es de descubrimiento, no de prescripción: `entryToBundle` descarta la progresión y el
+  tempo. Para rutinas *con método* (progresión, tempo) el vehículo es el plan file. Ver
+  [docs/fork/PLAN-MEJORAS.md](docs/fork/PLAN-MEJORAS.md) §F5-bis.1.
+- Tests e2e con Playwright contra el stack real (`e2e/`, con su [README](e2e/README.md)), con un workflow propio (`.github/workflows/fork-quality.yml`).
 - Plan de mejoras: [docs/fork/PLAN-MEJORAS.md](docs/fork/PLAN-MEJORAS.md) · Línea base: [docs/fork/BASELINE.md](docs/fork/BASELINE.md)
 
 ## Relación con el upstream

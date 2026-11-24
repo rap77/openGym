@@ -198,6 +198,38 @@ El upstream abrió la biblioteca como una **interfaz de índices**: un JSON en u
 `routines/` rompería el CI. **El índice propio del fork debe vivir fuera de `routines/`** (p. ej.
 `fork-routines/index.json`).
 
+**Límite verificado (24-nov-2026): el formato de biblioteca es de descubrimiento, no de prescripción.**
+`api/coach/core/routine-library.js` → `entryToBundle` construye la rutina importada así:
+
+```js
+ex: s.exercises.map(x => ({ id: x.id, sets: x.sets, ...(x.sec ? { mode:'time', sec:x.sec } : { mode:'reps', reps:x.reps }) }))
+```
+
+Solo conserva `id`, `sets` y `reps`/`sec`. **Descarta la progresión (`prog`) y el tempo.** Para una rutina
+Atlas eso es perder el método entero.
+
+**Consecuencia — dos vehículos, según la rutina:**
+
+| Tipo de rutina | Vehículo | Por qué |
+|---|---|---|
+| **Con método** (progresión, tempo) | **plan file** (`opengym_plan: 1`) | `cleanEx` exporta `prog` y `tempo`, y `parsePlan` los importa |
+| **Sin método** (lista de ejercicios) | entrada de índice | el Coach la sugiere y el usuario la importa |
+
+**Lo construido (24-nov-2026):** [`fork-routines/`](../../fork-routines/README.md) con
+`atlas-movilidad-hipopresivos.opengym-plan.json` — 5 rutinas, 32 ejercicios, todos del catálogo (con vídeo
+e instrucciones en español), con progresión doble + tempo `3-1-X-2` en los 8 ejercicios de fuerza de
+Atlas y progresión de tiempo (+5 s por sesión) en los 7 estáticos.
+
+**Y automatizado:** `e2e/tests/04-import-plan.spec.js` lo importa en la app real y comprueba que la regla
+y el tempo llegan a la rutina. Un sync del upstream que rompa el formato del plan salta en CI, no en la
+rutina del usuario. El workflow `fork-quality.yml` dispara con `fork-routines/**` entre sus rutas.
+
+**Lo que NO se ha hecho (y por qué):** no se ha publicado un índice propio en `config.coach.routinesUrl`.
+Cuando se haga, tiene que ser con rutinas *sin método*, porque con método llegarían sin progresión ni tempo.
+Y el índice necesita una URL https: el cliente la rechaza si no lo es (`frontend/src/lib/routine-library.js:18`),
+así que una instancia local en `http://localhost` **no puede** servir su propio índice. Opciones: publicarlo
+como fichero estático del propio fork (raw.githubusercontent.com, jsDelivr) o levantar TLS en la instancia.
+
 ### F5-bis.2 · Supervisión por visión — **el hueco que queda de verdad** (sigue en diseño)
 
 El upstream **no** tiene visión por cámara, pero **ya hay un issue abierto que va en esa dirección**:
