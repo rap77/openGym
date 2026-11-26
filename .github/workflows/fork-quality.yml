@@ -17,6 +17,10 @@ on:
       # Los planes del fork. El escenario 04 los importa en la app real, asi que un cambio
       # aqui tiene que volver a correr la e2e (24-nov-2026).
       - 'fork-routines/**'
+      # El codigo propio del fork: la puerta de calidad y el sync. Si esto no estuviera, un
+      # cambio en scripts/fork/ no correria la puerta que los ejecuta, y se pudiria sin que nadie
+      # se enterase (26-nov-2026).
+      - 'scripts/fork/**'
       - 'docker-compose.yml'
       - '.nvmrc'
       - '.github/workflows/fork-quality.yml'
@@ -28,6 +32,7 @@ on:
       - 'catalogue/**'
       - 'e2e/**'
       - 'fork-routines/**'
+      - 'scripts/fork/**'
       - 'docker-compose.yml'
       - '.nvmrc'
       - '.github/workflows/fork-quality.yml'
