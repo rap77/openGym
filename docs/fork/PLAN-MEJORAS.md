@@ -61,7 +61,17 @@ Disparador: decidir antes de empezar F3. Mientras D-0 siga abierta, solo se ejec
 **H1.5 `.npm-cache/` sin versionar:** ✅ 11-nov-2026, añadido a `.git/info/exclude`. Stack reconstruido con `opengym-fork-*:local`: `/api/health` 200, `users: 1`.
 
 **Procedimiento de sync con upstream** (antes de cada bloque de trabajo y con cada release del original):
-`git fetch upstream && git merge --ff-only upstream/main || git rebase upstream/main` → `npm ci` en los paquetes cambiados → tests en solitario de lo que toque el fork.
+`scripts/fork/sync-upstream.sh --push` → el script hace el fetch, el rebase, el `npm ci` de lo que
+cambió, la puerta de calidad completa y el push. **Manual** (lo que se hizo el 24-nov-2026 para la
+v1.4.5): `git fetch upstream && git merge --ff-only upstream/main || git rebase upstream/main` →
+`npm ci` en los paquetes cambiados → tests en solitario de lo que toque el fork.
+
+**Ojo al `ORIGIN` y al `RP_ID`** (25-nov-2026): son un valor único cada uno, y las passkeys están
+atadas al `RP_ID` (`api/server.js`: `verifyError(e, { rpId: RP_ID, origin: ORIGIN })`). Cambiar el
+hostname del origin **invalida las passkeys** del hostname viejo. Para mudar de `localhost` a un
+hostname real hay que hacerlo **antes** de crear la primera passkey, o usar el enlace de dispositivo
+(`api/device-link.js`): el código crea una passkey nueva **para el mismo uid**, así que el perfil, el
+nombre y el historial sobreviven.
 
 ## Fase 2: Calidad sin tocar lógica (revisada 11-nov-2026 para D-0 = seguir upstream) — ✅ **cerrada 24-nov-2026**
 
@@ -103,8 +113,16 @@ Disparador: decidir antes de empezar F3. Mientras D-0 siga abierta, solo se ejec
 - Se hace con el primer commit de V1.0.
 
 **H2.4 Workspace npm: descartado**
-- Cambiaría el `package.json` y los lockfiles del autor, con conflicto seguro en cada sync. Se sustituye por `scripts/fork/check.sh` (archivo nuevo): las tres suites con `--maxWorkers=2` + biome + e2e.
+- Cambiaría el `package.json` y los lockfiles del autor, con conflicto seguro en cada sync. Se sustituye por `scripts/fork/check.sh` (archivo nuevo): las tres suites con `--maxWorkers=4` + los checks de CI + la e2e.
 - Disparador para reconsiderarlo: que el upstream adopte workspaces.
+- ✅ **CERRADO 25-nov-2026.** `scripts/fork/` con `check.sh` (la puerta de calidad completa), `sync-upstream.sh` (el sync de una sola orden) y `lib.sh`. Ver [scripts/fork/README.md](../../scripts/fork/README.md).
+- **Nota sobre `--maxWorkers`:** el plan decía 2; la medición del 24-nov dice **4**. El test de `media-sync` reserva 200 MB + 150 MB de blobs y con 12 workers en paralelo la máquina se queda sin RAM y ese test caduca a los 5 s (deuda D-B1/D-B4). Con 4 workers la suite entera pasa en 317 s. Ajustado a lo medido, no a lo supuesto.
+
+**H2.5 Sincronizar con el upstream en una orden** ✅ **cerrado 25-nov-2026**
+- El upstream publica cada 1-2 semanas con 300+ ficheros. El sync manual del 24-nov (1068 commits) llevo horas: rebase, `npm ci` en 5 paquetes, tres suites, cinco checks, e2e y CI.
+- `scripts/fork/sync-upstream.sh` lo hace en una orden: preflight, fetch, rama de seguridad, rebase, `npm ci` solo en los paquetes que cambiaron, `check.sh` y, solo si todo está en verde, `git push --force-with-lease`.
+- Si el rebase choca, **aborta y deja el repo como estaba**: un conflicto ahí significa que un commit del fork ya toca un fichero del upstream, y eso es señal de que la funcionalidad debe ir upstream.
+- **Disparador de revisión:** la primera vez que se use de verdad (con la v1.4.6, prevista para diciembre).
 
 **H2.5 Deudas de BASELINE antes de H2.3**
 - D-B1: `media-sync.test.js` con `--testTimeout=20000`. Si pasa, se cierra como lento por entorno.

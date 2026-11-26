@@ -41,6 +41,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check:
+    # La puerta de calidad del fork (scripts/fork/check.sh): los checks de CI y las tres suites.
+    #
+    # Es el mismo script que hay que correr antes de cada sync con el upstream. Que el CI lo
+    # ejecute es lo que lo mantiene vivo: si se rompe, que se rompa aqui y no un martes a las
+    # once de la noche con una release del upstream encima. La e2e va en su propio job.
+    if: github.repository == 'rap77/openGym'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: La puerta de calidad del fork
+        run: bash scripts/fork/check.sh --install --no-e2e
+
   e2e:
     # Solo en el fork. Si algún día se propone upstream, allí no correría sin cambiar esto.
     if: github.repository == 'rap77/openGym'

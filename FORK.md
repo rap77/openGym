@@ -18,6 +18,7 @@ Todo el mérito del proyecto es de su autor. El README, el sitio web, las tienda
   tempo. Para rutinas *con método* (progresión, tempo) el vehículo es el plan file. Ver
   [docs/fork/PLAN-MEJORAS.md](docs/fork/PLAN-MEJORAS.md) §F5-bis.1.
 - Tests e2e con Playwright contra el stack real (`e2e/`, con su [README](e2e/README.md)), con un workflow propio (`.github/workflows/fork-quality.yml`).
+- **Scripts del fork**: [`scripts/fork/`](scripts/fork/README.md) con la puerta de calidad (`check.sh`) y el **sync con el upstream en una orden** (`sync-upstream.sh`). El upstream publica cada 1-2 semanas; esto lo convierte en 20 minutos con todo verificado.
 - Plan de mejoras: [docs/fork/PLAN-MEJORAS.md](docs/fork/PLAN-MEJORAS.md) · Línea base: [docs/fork/BASELINE.md](docs/fork/BASELINE.md)
 
 ## Relación con el upstream
