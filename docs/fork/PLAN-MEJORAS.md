@@ -117,6 +117,13 @@ nombre y el historial sobreviven.
 - Disparador para reconsiderarlo: que el upstream adopte workspaces.
 - ✅ **CERRADO 25-nov-2026.** `scripts/fork/` con `check.sh` (la puerta de calidad completa), `sync-upstream.sh` (el sync de una sola orden) y `lib.sh`. Ver [scripts/fork/README.md](../../scripts/fork/README.md).
 - **Nota sobre `--maxWorkers`:** el plan decía 2; la medición del 24-nov dice **4**. El test de `media-sync` reserva 200 MB + 150 MB de blobs y con 12 workers en paralelo la máquina se queda sin RAM y ese test caduca a los 5 s (deuda D-B1/D-B4). Con 4 workers la suite entera pasa en 317 s. Ajustado a lo medido, no a lo supuesto.
+- **Corrección del 26-nov:** el frontend de la puerta corre **con los flags exactos del upstream** (`vitest run --coverage ...`), no con `--maxWorkers=4`. Razón: es el comando que decide un PR, y una puerta verde tiene que predecir lo que pasará upstream. Con otros flags el resultado difiere, porque la suite del upstream tiene tests cuyo resultado depende del agrupamiento de ficheros en workers.
+- **La puerta distingue "fallo mío" de "fallo del upstream":** si el frontend falla, compara los ficheros de test que fallaron con los que toca el fork (`git diff upstream/main...main`). Los míos bloquean; los del upstream avisan y no bloquean (hoy el fork no toca ni un fichero de `frontend/`, así que cualquier fallo del frontend es del upstream por definición).
+
+**El bug que encontró: la suite del upstream tiene un fallo de aislamiento entre ficheros** (26-nov-2026)
+- `SetVideo.test.jsx` falla si comparte worker con un fichero que mockea `../store/useStore.js` (repro minimo de 2 ficheros, 4 tests). El `config` que el test pone en el store deja de ser el que la app lee, y los limites de media salen por defecto.
+- Como depende del agrupamiento por workers, parece un flake: con `--maxWorkers=4` pasa, con los flags del upstream no.
+- **Reportado upstream: https://github.com/DuarteSantos8/openGym/issues/1562** (con el repro minimo y los numeros exactos).
 
 **H2.5 Sincronizar con el upstream en una orden** ✅ **cerrado 25-nov-2026**
 - El upstream publica cada 1-2 semanas con 300+ ficheros. El sync manual del 24-nov (1068 commits) llevo horas: rebase, `npm ci` en 5 paquetes, tres suites, cinco checks, e2e y CI.

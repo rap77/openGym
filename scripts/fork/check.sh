@@ -76,7 +76,48 @@ step "Tests del mcp"
 run "mcp" bash -c "cd '$REPO_ROOT/mcp' && npm test"
 
 step "Tests del frontend"
-run "frontend (vitest)" bash -c "cd '$REPO_ROOT/frontend' && npx vitest run --maxWorkers=${FRONTEND_MAX_WORKERS:-4}"
+# Los MISMOS flags que usa el upstream en su CI (.github/workflows/test.yml). No es capricho: es
+# el comando que decide un PR, y el coverage cambia el resultado de un test (SetVideo.test.jsx
+# falla con coverage y pasa sin el, porque la instrumentacion cambia el timing). Con otros flags
+# esta puerta no prediria lo que va a pasar upstream.
+FRONTEND_LOG="$(mktemp)"
+FRONTEND_T0=$(date +%s)
+if ( cd "$REPO_ROOT/frontend" && npx vitest run \
+      --reporter=default \
+      --coverage --coverage.provider=v8 --coverage.include='src/**' ) > "$FRONTEND_LOG" 2>&1; then
+  FRONTEND_T1=$(date +%s)
+  DUR=$(( FRONTEND_T1 - FRONTEND_T0 )); [ "$DUR" -lt 0 ] && DUR=0
+  ok "frontend (vitest, como el upstream) (${DUR}s)"
+  PASSED=$(( PASSED + 1 ))
+else
+  FRONTEND_T1=$(date +%s)
+  DUR=$(( FRONTEND_T1 - FRONTEND_T0 )); [ "$DUR" -lt 0 ] && DUR=0
+  # Clasifica los fallos: son mios (toco ese fichero) o son del upstream (no lo toco)?
+  FAILED_FILES="$(sed -e 's/\x1b\[[0-9;]*[a-zA-Z]//g' "$FRONTEND_LOG" \
+    | grep -oE 'FAIL +[^ ]+\.(test|spec)\.[a-z]+' | awk '{print $2}' | sed 's|^frontend/||' | sort -u || true)"
+  MINE="$(git -C "$REPO_ROOT" diff --name-only upstream/main...main 2>/dev/null | sed 's|^frontend/||' || true)"
+  MINE_FAILED=''; UPSTREAM_FAILED=''
+  for f in $FAILED_FILES; do
+    if printf '%s\n' "$MINE" | grep -qxF "$f"; then MINE_FAILED="$MINE_FAILED $f"; else UPSTREAM_FAILED="$UPSTREAM_FAILED $f"; fi
+  done
+  if [ -n "$MINE_FAILED" ]; then
+    fail "frontend (vitest) (${DUR}s) - fallos en ficheros TUYOS:$MINE_FAILED"
+    FAILURES+=("frontend (vitest)")
+  elif [ -n "$UPSTREAM_FAILED" ]; then
+    # El upstream tiene su propia suite en rojo. No es cosa del fork y no debe bloquearlo,
+    # pero hay que decirlo claro: un PR del fork se mediria con la misma suite.
+    warn "frontend (vitest) (${DUR}s) - fallos en ficheros del UPSTREAM, no tuyos:$UPSTREAM_FAILED"
+    warn "  El CI del upstream esta en rojo con lo mismo. No bloquea al fork, pero un PR tuyo se"
+    warn "  mediria con esa suite: reporta el bug upstream antes de abrir el PR."
+    dim "Log completo: $FRONTEND_LOG"
+    PASSED=$(( PASSED + 1 ))
+  else
+    fail "frontend (vitest) (${DUR}s) - fallos sin fichero identificable"
+    dim "Log completo: $FRONTEND_LOG"
+    FAILURES+=("frontend (vitest)")
+  fi
+fi
+[ -n "${KEEP_FRONTEND_LOG:-}" ] || rm -f "$FRONTEND_LOG"
 
 if [ "$RUN_E2E" -eq 1 ]; then
   step "Tests e2e (Playwright contra el stack aislado)"

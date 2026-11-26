@@ -24,17 +24,65 @@ Qué corre:
 | `build-api-docs --check` | La documentación de la API está al día |
 | `api` | `node --test` (1084 tests) |
 | `mcp` | La suite del servidor MCP (153 tests) |
-| `frontend` | `vitest run --maxWorkers=4` (10101 tests) |
+| `frontend` | `vitest run` **con los flags exactos del upstream** (10101 tests) |
 | `e2e` | Playwright contra el stack aislado (4 escenarios) |
 
-**Por qué `--maxWorkers=4` y no el que toque:** el test de `media-sync` reserva 200 MB + 150 MB de
-blobs en memoria. Con 12 workers en paralelo la máquina se queda sin RAM y ese test caduca a los
-5 s; es la deuda D-B1/D-B4 del [BASELINE](../../docs/fork/BASELINE.md), no un fallo de lógica. Con 4 workers la
-suite entera pasa. Se puede cambiar con `FRONTEND_MAX_WORKERS=8 scripts/fork/check.sh`.
+### El frontend corre con los flags del upstream, a propósito
 
-**Por qué comprueba la versión de Node:** el repo pide la de `.nvmrc` (22) y con otra el upstream da
-fallos falsos (`AdminCoach`, `coach-api.i18n`). El script cambia solo con nvm si puede, y si no,
-para y lo dice.
+No es capricho: es **el comando que decide un PR**, así que una puerta verde tiene que predecir lo que
+va a pasar upstream. El comando del upstream (`.github/workflows/test.yml`) es:
+
+```
+npx vitest run --reporter=default --coverage --coverage.provider=v8 --coverage.include='src/**'
+```
+
+**Y da un resultado distinto al de otros flags**, porque la suite tiene tests cuyo resultado depende
+del agrupamiento de ficheros en workers (ver más abajo). Con `--maxWorkers=4` la suite pasa; con los
+flags del upstream, a veces no.
+
+### La puerta distingue "fallo mío" de "fallo del upstream"
+
+Si el frontend falla, el script mira **qué ficheros de test fallaron** y los compara con los que toca
+el fork (`git diff upstream/main...main`):
+
+- **Fallo en un fichero mío** → la puerta **falla**. Es mío.
+- **Fallo en un fichero que no toco** → la puerta **avisa y sigue**. Es del upstream: un PR mío se
+  mediría con esa misma suite, así que hay que reportarlo upstream antes de abrir el PR.
+
+Hoy el fork **no toca ni un fichero de `frontend/`**, así que cualquier fallo del frontend es del
+upstream por definición. La puerta lo dice con nombre y apellidos en vez de dejarte adivinar.
+
+### El bug que la puerta encontró (y que ya está reportado)
+
+El primer `check` en CI del fork falló con 4 tests de `src/components/SetVideo.test.jsx`. Diagnóstico:
+
+| Combinación | Resultado |
+|---|---|
+| `SetVideo.test.jsx` solo | ✅ 10/10 |
+| `CoachIntake.test.jsx` solo | ✅ 45/45 |
+| `PasswordAuth.test.jsx` solo | ✅ 29/29 |
+| `SetVideo` + `CoachIntake` | ❌ **4 fallan** (51 pasan) |
+| `SetVideo` + `PasswordAuth` | ❌ **2 fallan** (37 pasan) |
+
+Es un **fallo de aislamiento entre ficheros de test**: los ficheros que sustituyen el módulo del store
+con `vi.mock('../store/useStore.js')` se filtran a los ficheros que van después en el mismo worker, y
+el `config` que el test pone en el store deja de ser el que la app lee. Como el agrupamiento depende
+del número de workers, parece un flake.
+
+Reportado upstream: **https://github.com/DuarteSantos8/openGym/issues/1562**
+
+**Un aviso que costó tiempo:** no corras **dos vitest a la vez** en el mismo repo. Se pelean por
+`frontend/coverage/.tmp` y cada uno corrompe al otro:
+
+```
+Error: Something removed the coverage directory ".../frontend/coverage/.tmp"
+Make sure you are not running multiple Vitests with the same "coverage.reportsDirectory" at the same time.
+```
+
+### Por qué comprueba la versión de Node
+
+El repo pide la de `.nvmrc` (22) y con otra el upstream da fallos falsos (`AdminCoach`,
+`coach-api.i18n`). El script cambia solo con nvm si puede, y si no, para y lo dice.
 
 ## `sync-upstream.sh` — sincronizar con el upstream
 
