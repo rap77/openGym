@@ -54,6 +54,50 @@ run() {
   fi
 }
 
+# Clasifica los fallos de una suite: son mios (toco ese fichero) o son del upstream?
+#
+# El fork no toca ni un fichero de frontend/ ni de api/, asi que ahi cualquier fallo es del
+# upstream por definicion. Avisar de eso (y no bloquear) evita dos cosas: una puerta roja sin
+# motivo y un sync que se queda a medias por un fallo que no es del fork.
+#
+# classify <log> <prefijo-en-el-log> <prefijo-en-el-diff> <etiqueta>
+# El log y el diff usan rutas distintas (vitest imprime "src/..." relativo a frontend/, y el diff
+# del repo lleva "frontend/src/..."), asi que se recortan con prefijos distintos para que ambos
+# lados queden en la misma forma y la comparacion sea exacta.
+classify() {
+  local log="$1" logpfx="$2" diffpfx="$3" label="$4"
+  local failed mine mine_failed upstream_failed f
+  # Dos formatos: vitest escribe " FAIL  src/..." y node --test escribe
+  # "location: '/ruta/absoluta/api/test/x.test.js:85:1'". Se pillan por separado y se unen.
+  failed="$( { sed -e 's/\x1b\[[0-9;]*[a-zA-Z]//g' "$log" \
+    | grep -oE "FAIL +${logpfx}[^ ]*\.(test|spec)\.[a-z]+" \
+    | grep -oE "${logpfx}[^ ]*\.(test|spec)\.[a-z]+"
+    sed -e 's/\x1b\[[0-9;]*[a-zA-Z]//g' "$log" \
+    | grep -oE "location: '[^']*${logpfx}[^':]*\.(test|spec)\.[a-z]+" \
+    | grep -oE "${logpfx}[^':]*\.(test|spec)\.[a-z]+"; } \
+    | sed "s|^${logpfx}||" | sort -u || true)"
+  mine="$(git -C "$REPO_ROOT" diff --name-only upstream/main...main 2>/dev/null \
+    | sed "s|^${diffpfx}||" || true)"
+  mine_failed=''; upstream_failed=''
+  for f in $failed; do
+    if printf '%s\n' "$mine" | grep -qxF "$f"; then mine_failed="$mine_failed $f"; else upstream_failed="$upstream_failed $f"; fi
+  done
+  if [ -n "$mine_failed" ]; then
+    fail "$label - fallos en ficheros TUYOS:$mine_failed"
+    FAILURES+=("$label")
+  elif [ -n "$upstream_failed" ]; then
+    warn "$label - fallos en ficheros del UPSTREAM, no tuyos:$upstream_failed"
+    warn "  El upstream tiene su propia suite en rojo con lo mismo. No bloquea al fork, pero un PR"
+    warn "  tuyo se mediria con esa suite: reporta el bug upstream antes de abrir el PR."
+    dim "Log completo: $log"
+    PASSED=$(( PASSED + 1 ))
+  else
+    fail "$label - fallos sin fichero identificable"
+    dim "Log completo: $log"
+    FAILURES+=("$label")
+  fi
+}
+
 step "Entorno"
 require_node
 dim "Node $(node -v), npm $(npm -v), repo $REPO_ROOT"
@@ -70,16 +114,26 @@ run "coach assets"         bash -c "cd '$REPO_ROOT' && node scripts/build-coach-
 run "api docs"             bash -c "cd '$REPO_ROOT' && node scripts/build-api-docs.mjs --check"
 
 step "Tests de la api"
-run "api (node --test)" bash -c "cd '$REPO_ROOT/api' && npm test"
+API_LOG="$(mktemp)"
+API_T0=$(date +%s)
+if ( cd "$REPO_ROOT/api" && npm test ) > "$API_LOG" 2>&1; then
+  API_T1=$(date +%s)
+  DUR=$(( API_T1 - API_T0 )); [ "$DUR" -lt 0 ] && DUR=0
+  ok "api (node --test) (${DUR}s)"
+  PASSED=$(( PASSED + 1 ))
+else
+  API_T1=$(date +%s)
+  DUR=$(( API_T1 - API_T0 )); [ "$DUR" -lt 0 ] && DUR=0
+  classify "$API_LOG" "api/test/" "api/test/" "api (node --test) (${DUR}s)"
+fi
+rm -f "$API_LOG"
 
 step "Tests del mcp"
 run "mcp" bash -c "cd '$REPO_ROOT/mcp' && npm test"
 
 step "Tests del frontend"
 # Los MISMOS flags que usa el upstream en su CI (.github/workflows/test.yml). No es capricho: es
-# el comando que decide un PR, y el coverage cambia el resultado de un test (SetVideo.test.jsx
-# falla con coverage y pasa sin el, porque la instrumentacion cambia el timing). Con otros flags
-# esta puerta no prediria lo que va a pasar upstream.
+# el comando que decide un PR, y una puerta verde tiene que predecir lo que va a pasar upstream.
 FRONTEND_LOG="$(mktemp)"
 FRONTEND_T0=$(date +%s)
 if ( cd "$REPO_ROOT/frontend" && npx vitest run \
@@ -92,30 +146,7 @@ if ( cd "$REPO_ROOT/frontend" && npx vitest run \
 else
   FRONTEND_T1=$(date +%s)
   DUR=$(( FRONTEND_T1 - FRONTEND_T0 )); [ "$DUR" -lt 0 ] && DUR=0
-  # Clasifica los fallos: son mios (toco ese fichero) o son del upstream (no lo toco)?
-  FAILED_FILES="$(sed -e 's/\x1b\[[0-9;]*[a-zA-Z]//g' "$FRONTEND_LOG" \
-    | grep -oE 'FAIL +[^ ]+\.(test|spec)\.[a-z]+' | awk '{print $2}' | sed 's|^frontend/||' | sort -u || true)"
-  MINE="$(git -C "$REPO_ROOT" diff --name-only upstream/main...main 2>/dev/null | sed 's|^frontend/||' || true)"
-  MINE_FAILED=''; UPSTREAM_FAILED=''
-  for f in $FAILED_FILES; do
-    if printf '%s\n' "$MINE" | grep -qxF "$f"; then MINE_FAILED="$MINE_FAILED $f"; else UPSTREAM_FAILED="$UPSTREAM_FAILED $f"; fi
-  done
-  if [ -n "$MINE_FAILED" ]; then
-    fail "frontend (vitest) (${DUR}s) - fallos en ficheros TUYOS:$MINE_FAILED"
-    FAILURES+=("frontend (vitest)")
-  elif [ -n "$UPSTREAM_FAILED" ]; then
-    # El upstream tiene su propia suite en rojo. No es cosa del fork y no debe bloquearlo,
-    # pero hay que decirlo claro: un PR del fork se mediria con la misma suite.
-    warn "frontend (vitest) (${DUR}s) - fallos en ficheros del UPSTREAM, no tuyos:$UPSTREAM_FAILED"
-    warn "  El CI del upstream esta en rojo con lo mismo. No bloquea al fork, pero un PR tuyo se"
-    warn "  mediria con esa suite: reporta el bug upstream antes de abrir el PR."
-    dim "Log completo: $FRONTEND_LOG"
-    PASSED=$(( PASSED + 1 ))
-  else
-    fail "frontend (vitest) (${DUR}s) - fallos sin fichero identificable"
-    dim "Log completo: $FRONTEND_LOG"
-    FAILURES+=("frontend (vitest)")
-  fi
+  classify "$FRONTEND_LOG" "src/" "frontend/src/" "frontend (vitest, como el upstream) (${DUR}s)"
 fi
 [ -n "${KEEP_FRONTEND_LOG:-}" ] || rm -f "$FRONTEND_LOG"
 

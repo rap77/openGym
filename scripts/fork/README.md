@@ -42,19 +42,21 @@ flags del upstream, a veces no.
 
 ### La puerta distingue "fallo mío" de "fallo del upstream"
 
-Si el frontend falla, el script mira **qué ficheros de test fallaron** y los compara con los que toca
-el fork (`git diff upstream/main...main`):
+Si falla el **frontend** o la **api**, el script mira **qué ficheros de test fallaron** y los compara con
+los que toca el fork (`git diff upstream/main...main`):
 
 - **Fallo en un fichero mío** → la puerta **falla**. Es mío.
 - **Fallo en un fichero que no toco** → la puerta **avisa y sigue**. Es del upstream: un PR mío se
   mediría con esa misma suite, así que hay que reportarlo upstream antes de abrir el PR.
 
-Hoy el fork **no toca ni un fichero de `frontend/`**, así que cualquier fallo del frontend es del
-upstream por definición. La puerta lo dice con nombre y apellidos en vez de dejarte adivinar.
+Hoy el fork **no toca ni un fichero de `frontend/` ni de `api/`**, así que cualquier fallo en esas dos
+suites es del upstream por definición. La puerta lo dice con nombre y apellidos en vez de dejarte
+adivinar.
 
-### El bug que la puerta encontró (y que ya está reportado)
+### Los bugs que la puerta encontró
 
-El primer `check` en CI del fork falló con 4 tests de `src/components/SetVideo.test.jsx`. Diagnóstico:
+**1. Fallo de aislamiento en la suite del frontend (upstream).** El primer `check` en CI del fork
+falló con 4 tests de `src/components/SetVideo.test.jsx`:
 
 | Combinación | Resultado |
 |---|---|
@@ -70,6 +72,11 @@ el `config` que el test pone en el store deja de ser el que la app lee. Como el 
 del número de workers, parece un flake.
 
 Reportado upstream: **https://github.com/DuarteSantos8/openGym/issues/1562**
+
+**2. La suite de la api también es flaky.** En dos corridas distintas fallaron dos tests distintos
+(`api/test/server-csrf-bearer.test.js` y `api/test/server-password.test.js`), y en limpio la suite
+pasa 3 de 3 (1084/1084). Los tests usan puertos aleatorios (`server.listen(0)`) y hay uno que
+comprueba que **no tocan `./data`**, así que tu instancia local no se ve afectada.
 
 **Un aviso que costó tiempo:** no corras **dos vitest a la vez** en el mismo repo. Se pelean por
 `frontend/coverage/.tmp` y cada uno corrompe al otro:
