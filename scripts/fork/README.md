@@ -29,7 +29,7 @@ Qué corre:
 
 **Por qué `--maxWorkers=4` y no el que toque:** el test de `media-sync` reserva 200 MB + 150 MB de
 blobs en memoria. Con 12 workers en paralelo la máquina se queda sin RAM y ese test caduca a los
-5 s; es la deuda D-B1/D-B4 del [BASELINE](../BASELINE.md), no un fallo de lógica. Con 4 workers la
+5 s; es la deuda D-B1/D-B4 del [BASELINE](../../docs/fork/BASELINE.md), no un fallo de lógica. Con 4 workers la
 suite entera pasa. Se puede cambiar con `FRONTEND_MAX_WORKERS=8 scripts/fork/check.sh`.
 
 **Por qué comprueba la versión de Node:** el repo pide la de `.nvmrc` (22) y con otra el upstream da
