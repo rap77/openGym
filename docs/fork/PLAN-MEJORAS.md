@@ -91,7 +91,7 @@ nombre y el historial sobreviven.
 - **Progreso 22-nov-2026:** base de `e2e/` creada (`compose.e2e.yml` aislado en :8090 con volumen propio, `run.sh`, passkey virtual por CDP, Playwright 1.65.1 + Chromium 159). **Escenario 1 ✅** (crear perfil con passkey): 24,4 s en frío, 2,9 s en caliente (2 ejecuciones verdes). Pendientes: escenarios 2-4 y job `e2e` en `fork-quality.yml`.
 - **Progreso 22-nov-2026 (tarde):** **escenarios 2 y 4 ✅** en `02-workout-and-relogin.spec.js` (entreno libre con 1 serie → hoja "Workout complete!" con 1 set → Stats "All 1" → sign out → sign in con la misma passkey → el entreno sigue). Suite: 2 passed en 1,2 min (`18-e2e.log`). Lecciones de los 4 intentos: el "+" del selector no cierra la hoja (Escape); `page.goto` recarga la SPA y la manda a Inicio (navegar con la barra); tras guardar se abre "Workout complete!" y hay que cerrarla ("Nice!"); "Sign out" está en la subpágina "Account, devices and sync". Pendientes: **escenario 3** (PR detectado: requiere escribir un peso en la serie) y job `e2e` en `fork-quality.yml`.
 - **Progreso 22-nov-2026 (noche):** **escenario 3 ✅** en `03-personal-record.spec.js` (40 kg en la serie 1 → resumen con PRs 1, "New PR: barbell bench press" y Volume 400). Pasó al primer intento. **Suite completa: 3 passed en 25,4 s** (`19-e2e.log`). Los 4 escenarios de H2.3 están cubiertos. Pendiente para cerrar H2.3: job `e2e` en `.github/workflows/fork-quality.yml`.
-- Por qué primero: es la red de seguridad para tocar `workout-model.js` y la serie activa en V1.0.
+- Por qué primero: es la red de seguridad para tocar `workout-model.js` y la serie activa en el hito de visión (hoy V2 y V3 del DISENO-VISION v0.2).
 - **Disparador para proponerlo upstream:** 2 semanas estable en el fork.
 - ✅ **CERRADA 24-nov-2026.** Job `e2e` en `.github/workflows/fork-quality.yml` añadido (commit `d772a42e9c`) y en
   verde en CI (1m32s). Los 3 escenarios pasan en local contra el stack de **v1.4.5** (17,7 s, `24-sync-e2e-2.log`),
@@ -104,13 +104,13 @@ nombre y el historial sobreviven.
     el regex `/^Search .* exercises/` de `e2e/helpers/app.js` sigue casando.
 
 **H2.1 Linter y formateador: solo sobre código del fork**
-- Biome, con `biome.json` (archivo nuevo) y alcance **solo** en código propio: `e2e/**`, `frontend/src/lib/pose/**`, `frontend/src/views/PoseCoach.jsx`.
+- Biome, con `biome.json` (archivo nuevo) y alcance **solo** en código propio: `e2e/**`, `frontend/src/lib/pose/**`, `frontend/src/views/FormCheckWeb.jsx` (la pantalla de cámara web del pivot).
 - No se formatea código del upstream. Disparador para ampliar: que el upstream adopte un linter, y entonces se usa el suyo.
 - Aceptación: `npx @biomejs/biome ci` en verde en `fork-quality.yml`. Se hace junto con H2.3 (primer código propio).
 
 **H2.2 Tipos: `// @ts-check` + JSDoc solo en código del fork**
 - `tsconfig.fork.json` (archivo nuevo, `allowJs`, `checkJs`, `noEmit`), con `include` = `frontend/src/lib/pose/**`. Job `typecheck` en `fork-quality.yml`.
-- Se hace con el primer commit de V1.0.
+- Se hace con el primer commit propio del fork (V2, la fuente MediaPipe).
 
 **H2.4 Workspace npm: descartado**
 - Cambiaría el `package.json` y los lockfiles del autor, con conflicto seguro en cada sync. Se sustituye por `scripts/fork/check.sh` (archivo nuevo): las tres suites con `--maxWorkers=4` + los checks de CI + la e2e.
@@ -255,22 +255,55 @@ Y el índice necesita una URL https: el cliente la rechaza si no lo es (`fronten
 así que una instancia local en `http://localhost` **no puede** servir su propio índice. Opciones: publicarlo
 como fichero estático del propio fork (raw.githubusercontent.com, jsDelivr) o levantar TLS en la instancia.
 
-### F5-bis.2 · Supervisión por visión — **el hueco que queda de verdad** (sigue en diseño)
+### F5-bis.2 · Supervisión por visión — **el hueco que queda de verdad** (sigue en diseño, ahora con pivot)
 
-El upstream **no** tiene visión por cámara, pero **ya hay un issue abierto que va en esa dirección**:
+**Lo que cambió el 25-nov:** un tercero (`bluzername`) abrió dos PR al upstream que hacen justo lo que este
+fork iba a construir. El diseño deja de ser "motor propio" y pasa a ser "la segunda fuente de pose".
 
-- **Issue #920 (ABIERTO, 7-nov, propuesto por un usuario, no por el autor)**: contar saltos con la **cámara del
-  iPhone y detección de pose on-device** (Vision body pose request de Apple), más intervals automáticos
-  hands-free.
+| Upstream | Estado (27-nov-2026) |
+|---|---|
+| **PR #1560** "Form check (iPhone): the camera counts your reps and refuses the ones that miss the standard" (`bluzername`, abierta 25-nov, actualizada 27-nov) | **OPEN, MERGEABLE** · 19 151 adiciones / 4 borrados / 80 ficheros · rama `form-check-pr` (vive en el fork de quien la abrió, no en el upstream) · **sin comentario humano todavía**, solo la revisión del bot CodeRabbit · el mantenedor no ha contestado · el cuerpo de la PR dice que la generó Claude Code |
+| **PR #1576** "Form check: eight more drills (stacked on #1560)" (`bluzername`, abierta 26-nov) | **OPEN**, apilada sobre #1560 · 8 ficheros de drill (front raise, upright row, straight-arm pulldown, hanging leg/knee raise, seated cable row, wall sit, hip abduction y uno más), cada uno con su test, sus strings y sus commits de tuning · 84 filas del catálogo ganan un drill · su cuerpo dice: si se rechaza #1560, se cierra #1576 también |
+| **Issue #920** "Jump rope block in a workout…" (`pascalplr`, abierto 29-oct-2026) | **ABIERTO** · saltos contados por el Apple Watch, los AirPods o la cámara, intervals automáticos hands-free y pantalla en vivo con ritmo cardiaco y récords |
 
-Lo que el upstream **no** tiene: rama de visión, nada de pose en el ROADMAP, ni MediaPipe. Y su enfoque, si
-llega, sería **nativo iOS**; el diseño de este fork usa **MediaPipe en web/WASM**, que además cubre Android y
-escritorio con el mismo código. Ese ángulo cross-platform es la diferencia defendible.
+**Qué trae #1560:** 15 drills (squat, split squat, RDL, pull-up/chin-up, inverted row, chest-supported row,
+rear fly, push-up, dip, overhead press, triceps pushdown, curl, lateral raise, plank, side plank) y deja fuera
+a propósito lo que una cámara 2D no puede juzgar (deadlift del suelo, press de banca, hip thrust, remo
+inclinado, dead bug, fly en máquina, zancadas caminando). **La lógica del ejercicio es JavaScript; solo la
+fuente de cámara/pose es nativa** (`FormCheckPlugin.swift`). Y su propio texto: *"Android and the web are
+untouched: the entry only shows where the plugin answers."*
 
-**Disparador (del propio §12 del DISENO-VISION.md, ya comprobado):** antes de empezar V1.0, revisar el issue
-tracker y las ramas del upstream. **Hecho el 24-nov: issue #920 abierto, ninguna rama de visión.** La decisión
-12.3 (abrir issue/discusión upstream y, si se acepta, PR por hitos) sigue en pie y ahora tiene un dato
-concreto que aportar.
+**El contrato (lo escribió el upstream, en JS):** cada drill es un fichero que exporta su definición (`id`,
+`kind: 'reps'|'hold'`, `views`, `matches(ex)`, `standards`, `misses`, `create({ standard, view })`) y recibe
+frames con `t`, `aspect` y `joints` (los nombres de la pose de Apple: `nose`, `neck`, `leftShoulder`… `root`).
+Por frame devuelve `count`, `phase`, `inFrame`, `hint`, `justCounted`, `justMissed`, `reason`, `reached`,
+`highlight`; y `result()` devuelve `count`, `missed`, `reps`, `tiles`, `cue`, `details`. **Un drill MIDE, nunca
+califica.** Todo lo alrededor del drill es agnóstico: el pegamento de página (`lib/form-check-native.js`), las
+hojas (`FormCheckSheet.jsx`), el estándar guardado (`form-check-standard.js`) y el punto de entrada en
+`Workout.jsx` ("Form check" aparece cuando `drillFor(ex)` encuentra un drill).
+
+**Lo que el upstream NO tiene (sigue igual):** nada de pose en el ROADMAP, ni MediaPipe, ni la web y Android
+tocados. Y su enfoque es **nativo iOS**.
+
+**El ángulo del fork cambia:** ya no es "un motor propio" (v0.1 del DISENO-VISION.md, con `lib/pose/engine.js`,
+`rules/*.json`, `calibrate.js` y `views/PoseCoach.jsx`), es **los mismos drills con una segunda fuente de
+pose**: MediaPipe/WASM en el navegador, que con el mismo código cubre web, Android y escritorio. La PR #1560
+es justo el hueco que este fork buscaba y lo llena el upstream, así que el fork se **pivota al contrato** en vez
+de duplicarlo (decisión **D-1** del DISENO-VISION v0.2). Lo que se propone upstream es lo pequeño: la fuente
+MediaPipe y la dimensión `source` del contrato.
+
+**Riesgos honestos (§6 del DISENO-VISION v0.2):** los umbrales del upstream se ajustaron contra la pose de
+**Vision** (su cadera está ~0,2 largos de muslo por encima del pliegue de la cadera al fondo de una sentadilla),
+así que **no se transfieren** tal cual a MediaPipe: toca reajustar por fuente. El kit de tests del upstream filma
+una figura de palitos sintética: valida el código del drill, **no** una fuente real, y el fork necesita sus
+propios fixtures (frames de MediaPipe grabados, en JSON). El contrato **no tiene dimensión `source`**:
+`create({ standard, view })` no le dice al drill con qué fuente corre. Y todo esto cuelga de una **PR sin
+fusionar de un tercero**: si el mantenedor la rechaza, no hay contrato donde enchufar.
+
+**Disparador (del propio §12 del DISENO-VISION.md):** antes de empezar V1.0, revisar el issue tracker y las
+ramas del upstream. **Disparó el 25-nov-2026 y la respuesta fue la PR #1560.** La decisión 12.3 (abrir issue o
+discusión upstream y, si se acepta, PR por hitos) queda sustituida por la **D-1** del DISENO-VISION v0.2: pivot
+al contrato del upstream, y lo que se propone upstream es la fuente MediaPipe (PR más pequeña primero).
 
 ### F5-bis.3 · Límite duro de la regla "aditivo-only" ⚠️
 
@@ -369,12 +402,13 @@ i18n de cada string nuevo del fork sube).
 | Sync a v1.4.5 | ✅ 24-nov-2026 |
 | H2.1 Biome · H2.2 `@ts-check` | ⏳ pendientes (van con el primer código propio) |
 | F5-bis.1 Biblioteca propia de rutinas | ⏳ **la vía barata, sin tocar el upstream** |
-| F5-bis.2 Visión por cámara | ⏳ en diseño (DISENO-VISION.md) |
+| F5-bis.2 Visión por cámara | 🔄 pivot al contrato de drills del upstream (DISENO-VISION.md v0.2) |
 | F3 Refactorización | ⛔ no en el fork con D-0 = A |
 
-**Orden recomendado (actualizado 24-nov-2026):** F0 ✅ → F1 ✅ → F2 ✅ → **sync v1.4.5 ✅** → **F5-bis.1
-(biblioteca propia, ½ día y cero conflictos)** → H2.1 + H2.2 (antes de escribir `lib/pose/`) → V1.0 visión
-(con la discusión upstream ya abierta, §F5-bis.2) → el resto.
+**Orden recomendado (actualizado 27-nov-2026):** F0 ✅ → F1 ✅ → F2 ✅ → **sync v1.4.5 ✅** → **F5-bis.1
+(biblioteca propia, ½ día y cero conflictos)** → H2.1 + H2.2 (antes de escribir `frontend/src/lib/pose/**` y la
+pantalla de cámara web) → **V1 (seguir la PR #1560 del upstream, §F5-bis.2)** → **V2 (la fuente MediaPipe)** →
+el resto.
 
 **Antes de cada bloque de trabajo, y con cada release del original:**
 `git fetch upstream && git rebase upstream/main` → `npm ci` en los paquetes cambiados → tests en solitario de lo
