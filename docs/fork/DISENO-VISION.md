@@ -207,6 +207,48 @@ frontend/src/views/FormCheckWeb.jsx   ← the fork's own camera screen (V3)
 
 The file names above are a proposal, not a fact: upstream's names are fixed by #1560, the fork's are not.
 
+### 5.5 The strings and the 25 supported locales
+
+**Every user-facing string of this feature ships in all 25 supported locales.** This is not a
+nice-to-have and it is not optional: the repository's own gates enforce it.
+
+How the repo's i18n works (read from `frontend/src/locales/` and `frontend/scripts/`):
+
+- **English is the source language and has no pack.** The key IS the English string, so a new
+  string is written in English in the source and then translated into the 25 packs
+  (`ar, bn, cs, da, de, es, fa, fr, hi, hu, id, it, ko, lt, pl, pt, pt-BR, ru, sv, th, tr, uk,
+  vi, zh, zh-TW`).
+- **The reference is the union of all locales**, not one blessed file. A key that exists in only
+  some packs flags the others instead of passing unnoticed, because a missing key falls back to
+  English **silently, mid-sentence**, with every check green.
+- **The gates:** `node scripts/check-locales.mjs` (key present, not blank, `{n}` placeholders
+  preserved as a multiset) and `node scripts/check-source-strings.mjs --strict` (a `t()` literal
+  that no pack defines fails the build). Both run in CI.
+- **pt-BR inherits from pt.** It only carries `PT_BR_OVERRIDES` for the wording that must differ,
+  and `scripts/pt-br-inheritance-fingerprint.mjs` fingerprints every deliberately inherited entry
+  so an upstream change forces a review.
+- **Counts need plural forms.** `tn('{0} second', '{0} seconds', n)`, not `t()`, because
+  Lithuanian, Russian, Ukrainian and Polish have plural forms where a count sits in the string.
+- The only sanctioned escape hatch is `italianOnlyKeys` in `check-locales.mjs`, a deliberate list
+  for one Italian-only API-error copy. It lives in an upstream file, so the fork does not extend it.
+
+**The rule that saves most of the work: do not write new strings for the drill vocabulary.**
+Upstream already translated the drill names, the setup lines, the standards and the misses into
+the 25 packs. The fork's screen must **read them from the drill object** (`drill.name`,
+`drill.setup`, `drill.standards[].label`, `drill.misses[].line/say/row`, `tracker.result().cue`,
+`.tiles[].label`) and pass them through `t()`, never hardcode copy of its own. Then the fork's
+web screen is translated for free and there is nothing new to translate.
+
+Only the strings that are genuinely the fork's own (the web source's own hints) need 25
+translations each, so they are kept to the minimum and reused across the screen. The cost of a
+string in this fork is 25 translations (the packs went from 20 to 25 after the v1.4.5 sync), and
+that is the reason to consume upstream's strings instead of rewriting them.
+
+**A cheap first upstream contribution:** upstream's own PR says its translations are
+machine-drafted and want native eyes. Once the strings land, the fork can do a native-eye pass
+over the packs it knows best (`es.js` and `pt-BR.js`) and propose the corrections upstream. That
+needs neither MediaPipe nor the merge of anything else.
+
 ## 6. Honest risks
 
 **These are the reasons this pivot might fail. None of them is softened.**
@@ -250,7 +292,7 @@ Upstream's own list, on its iPhone source: bench dips stopping 10-15 degrees sho
 | **V0** | This document and the plan update | Done when `PLAN-MEJORAS.md` §F5-bis.2 and the status table name the pivot |
 | **V1** | Track the upstream PR: the fork reads `form-check-pr` (and #1576) as read-only references and re-syncs when they land | The branch is in the fork's remote-tracking refs, never rebased onto, and the fork's quality gate runs the drills' own tests (`npx vitest run src/lib/form-drills`: 21 files, 1,065 tests) once the branch is in |
 | **V2** | The MediaPipe source in the fork: a new `frontend/src/lib/pose/` (new files only) producing frames in the upstream contract shape, unit-tested against recorded MediaPipe fixtures | The source emits frames in the contract's shape and the unit tests pass against the recorded fixtures. **The thresholds do not transfer yet, so the drills do not count correctly yet**; that is V4 |
-| **V3** | The web/Android camera screen: the fork's own glue and screen, because upstream's `form-check-native.js` is iOS-only, so the entry appears where the web source can answer | A real set is counted from the phone camera on web and on Android. The entry itself lives in upstream's `views/Workout.jsx`, a contact point for the upstream PR (D-7) |
+| **V3** | The web/Android camera screen: the fork's own glue and screen, because upstream's `form-check-native.js` is iOS-only, so the entry appears where the web source can answer | A real set is counted from the phone camera on web and on Android. The entry itself lives in upstream's `views/Workout.jsx`, a contact point for the upstream PR (D-7). Every string of the screen is in the 25 supported locales, the drill vocabulary is consumed from upstream's translated strings (§5.5), and `check-locales.mjs` plus `check-source-strings.mjs --strict` are green |
 | **V4** | The upstream PR: the MediaPipe source plus the `source` dimension in the contract, with the fixtures | The pull request is open upstream with the fixtures attached, and the maintainer's answer is on the record |
 | **V5** | The level test and the remaining home exercises: v0.1's `level-test.js`, sit-and-reach, split squat (per side, as in v0.1) and one-leg balance | The level test runs alone and proposes a level per pattern; each remaining exercise has a drill with its own test. Upstream already has a split-squat drill, so the fork's is the per-side variant, or a gap upstream left |
 | **V2.0** | The Kinect bridge | **Deferred** (D-6). The owner has a Kinect v1 (Xbox 360); SDK 1.8 is Windows-only and unmaintained, tracking on the floor is poor, and it needs the "Kinect for Windows" adapter. The trigger to reopen it is unchanged from v0.1 §3.1: (a) more than 10 % false counts in the v1 acceptance tests because of depth, (b) wanting to supervise floor exercises (plank or bridge seen from the front), or (c) lighting problems where you train, **and** not solved by moving the phone or the light. First a Kinect v2 or a current depth camera is evaluated |
@@ -264,6 +306,7 @@ Upstream's own list, on its iPhone source: bench dips stopping 10-15 degrees sho
 5. **D-5 · While #1560 is unmerged the fork tracks the branch and writes no engine.** The branch lives in the contributor's fork, so the fork reads it as a read-only reference and never rebases onto it. The MediaPipe source (V2) is a source, not an engine, and may be developed against the branch's contract shape; but no fork code that depends on the contract lands in `main` until the contract is upstream, because otherwise the fork's `main` would carry code that upstream does not have.
 6. **D-6 · Kinect deferred.** The owner has a Kinect v1 (Xbox 360); SDK 1.8 is Windows-only and unmaintained, floor tracking is poor, and it needs the "Kinect for Windows" adapter. The v0.1 §3.1 bridge stays designed but not planned, and the reopen trigger is unchanged.
 7. **D-7 · D-0 = A stays: no upstream file is edited in the fork.** The fork's files are new; the two upstream contact points are the **Workout entry** (`views/Workout.jsx`, where "Form check" shows) and the **catalogue's drill mapping** (the drill that each exercise matches). Both are candidates for the upstream pull request.
+8. **D-8 · Every user-facing string ships in the 25 supported locales, and the drill vocabulary is consumed, not rewritten.** The fork reads the drill's name, setup, standards and misses from the drill object and passes them through `t()`, so the screen is translated for free; the fork's own strings are the minimum possible and land in all 25 packs, with `check-locales.mjs` and `check-source-strings.mjs --strict` green (§5.5).
 
 ## 9. Open questions
 

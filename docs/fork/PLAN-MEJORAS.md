@@ -300,6 +300,17 @@ propios fixtures (frames de MediaPipe grabados, en JSON). El contrato **no tiene
 `create({ standard, view })` no le dice al drill con qué fuente corre. Y todo esto cuelga de una **PR sin
 fusionar de un tercero**: si el mantenedor la rechaza, no hay contrato donde enchufar.
 
+**Idiomas (requisito duro, D-8):** todo el texto que ve el usuario sale en los **25 idiomas soportados**
+(`frontend/src/locales/`: ar, bn, cs, da, de, es, fa, fr, hi, hu, id, it, ko, lt, pl, pt, pt-BR, ru, sv,
+th, tr, uk, vi, zh, zh-TW). El inglés es el idioma fuente y no tiene pack; la clave ES la cadena en inglés.
+Las puertas son `check-locales.mjs` (la referencia es la unión de todos los packs: una clave que falta en
+uno cae al inglés en medio de la frase sin que nada falle) y `check-source-strings.mjs --strict`. pt-BR
+hereda de pt y solo lleva `PT_BR_OVERRIDES`; los números van con `tn()` porque lituanio, ruso, ucraniano y
+polaco tienen plurales. **La regla que ahorra trabajo: el fork consume el vocabulario del drill ya
+traducido** (`drill.name`, `drill.setup`, `standards[].label`, `misses[].line/say/row`, `result().cue`)
+en vez de reescribirlo, y sus propias strings son las mínimas y van a los 25 packs. Detalle en
+[DISENO-VISION.md §5.5](DISENO-VISION.md).
+
 **Disparador (del propio §12 del DISENO-VISION.md):** antes de empezar V1.0, revisar el issue tracker y las
 ramas del upstream. **Disparó el 25-nov-2026 y la respuesta fue la PR #1560.** La decisión 12.3 (abrir issue o
 discusión upstream y, si se acepta, PR por hitos) queda sustituida por la **D-1** del DISENO-VISION v0.2: pivot
